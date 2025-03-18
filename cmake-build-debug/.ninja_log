@@ -1,0 +1,6 @@
+# ninja log v5
+4	1477	7640184147596998	CMakeFiles/grafos.dir/grafo.c.obj	555d03687ed84a6f
+0	1479	7640184147596998	CMakeFiles/grafos.dir/grafoTeste.c.obj	8ccb9c9b283690e3
+1479	2754	7640184160350404	grafos.exe	ad7cce03b499e36d
+1	79	7640184340664236	CMakeFiles/grafos.dir/grafo.c.obj	555d03687ed84a6f
+80	222	7640184342035802	grafos.exe	ad7cce03b499e36d
