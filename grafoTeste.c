@@ -4,11 +4,11 @@
 
 int main () {
     Grafo* meuGrafo = criarGrafo(5);
-    insereAresta(meuGrafo, 0, 1);
-    insereAresta(meuGrafo, 0, 2);
-    insereAresta(meuGrafo, 1, 2);
+    insereAresta(meuGrafo, 1, 2, 0.1);
+    insereAresta(meuGrafo, 4, 2, 0.2);
+    insereAresta(meuGrafo, 1, 2, 0);
 
-    printGrafo(meuGrafo);
+    imprimirGrafo(meuGrafo);
 
     return 0;
 }

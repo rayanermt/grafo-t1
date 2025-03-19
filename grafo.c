@@ -3,62 +3,85 @@
 #include <grafo.h>
 
 struct node {
-    int vertice;        // Valor armazenado no vértice.
-    struct node* prox;
+    Node* prox;
+    int label;
+    float peso;
 };
 
 struct grafo {
     int nro_vertices;
-    struct node** lista_adj;
+    int nro_arestas;
+    int eh_ponderado;
+    int grau_max;
+    Node** lista_adj;       // Vetor de listas ligadas.
 };
 
 // Criar um novo nó(vértice) no grafo.
-Node* criarNode(int valor) {
+Node* insereVertice(int label) {
     struct node* novoNode = malloc(sizeof(Node));
-    novoNode->vertice = valor;
-    novoNode->prox = NULL;
+
+    if (novoNode != NULL) {
+        novoNode->prox = NULL;
+        novoNode->label = label;
+    }
+
     return novoNode;
 }
 
 // Criar um novo grafo.
 Grafo* criarGrafo(int nro_vertices) {
-    Grafo* grafo = malloc(sizeof(Grafo));
-    grafo->nro_vertices = nro_vertices;
+    Grafo* gr = (Grafo*) malloc( sizeof(Grafo) );
 
-    grafo->lista_adj = malloc(nro_vertices * sizeof(Node*));
+    if (gr != NULL) {
+        gr->nro_vertices = nro_vertices;
+        gr->nro_arestas = 0;
+        gr->lista_adj = (Node **) malloc(nro_vertices * sizeof(Node *));
 
-    for(int i = 0; i < nro_vertices; i++)
-        grafo->lista_adj[i] = NULL;
+        for (int i = 0; i < nro_vertices; i++) {
+            gr->lista_adj[i] = NULL;
+        }
+    }
 
-    return grafo;
+    return gr;
 }
 
-// Adicionar uma aresta de u -> v.
-int insereAresta(Grafo* grafo, int u, int v) {
-    if(grafo == NULL)
+// Adicionar uma aresta (u,v) no grafo, com peso w.
+int insereAresta(Grafo* gr, int u, int v, float w) {
+    Node* aux;
+
+    if(gr == NULL)
         return 0;
 
-    if (u < 0 || u >= grafo->nro_vertices)
+    // Assegura que os vértices estão dentro do grafo.
+    if (u < 0 || u >= gr->nro_vertices)
         return 0;
-    if (v < 0 || v >= grafo->nro_vertices)
+    if (v < 0 || v >= gr->nro_vertices)
         return  0;
 
-    Node* novoNode = criarNode(v);
-    novoNode->prox = grafo->lista_adj[u];
-    grafo->lista_adj[u] = novoNode;
-    // TODO: Tratar dígrafo
-    // TODO: adicionar pesos
+    // Percorre toda a lista de adjacência de U para saber se a aresta já existe.
+    for (aux = gr->lista_adj[u]; aux != NULL; aux = aux->prox)
+        if (aux->label == v)
+            return 0;
 
+// Adicionar um novo vértice ao início da lista de adjacência de U.
+   aux = malloc(sizeof(Node*));
+   aux->label = v;
+   aux->prox = gr->lista_adj[u];
+   aux->peso = w;
+   gr->lista_adj[u] = aux;
+   gr->nro_arestas++;
+
+    // TODO: Tratar dígrafo
     return 1;
 }
 
 // Imprimir o grafo
-void printGrafo(Grafo* grafo) {
+void imprimirGrafo(Grafo* grafo) {
     for(int v = 0; v < grafo->nro_vertices; v++) {
         Node* temp = grafo->lista_adj[v];
         printf("\n Node %d:\n ", v);
         while (temp) {
-            printf("%d -> ", temp->vertice);
+            printf("%d (%.2f) -> ", temp->label, temp->peso);
             temp = temp->prox;
         }
         printf("\n");
