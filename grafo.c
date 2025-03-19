@@ -9,7 +9,8 @@ struct node {
 };
 
 struct grafo {
-    int nro_vertices;
+    int nro_vertices;   // Número de vértices alocados.
+    int lista_tam;        // Espaço total do vetor de listas.
     int nro_arestas;
     int eh_ponderado;
     int grau_max;
@@ -17,15 +18,29 @@ struct grafo {
 };
 
 // Criar um novo nó(vértice) no grafo.
-Node* insereVertice(int label) {
-    struct node* novoNode = malloc(sizeof(Node));
+int insereVertice(Grafo* gr, int label) {
+    int novoNroVertices = gr->nro_vertices + 1;
+
+    if(novoNroVertices > gr->lista_tam) {
+        int novoTamanho = gr->nro_vertices * 1.5;
+        gr->lista_adj = realloc(gr->lista_adj, novoTamanho * sizeof(Node*));
+    }
+
+    if(gr->lista_adj == NULL)
+        return 0;
+
+    Node* novoNode = malloc(sizeof(Node));
 
     if (novoNode != NULL) {
         novoNode->prox = NULL;
         novoNode->label = label;
+        novoNode->peso = 0;
     }
 
-    return novoNode;
+    gr->lista_adj[gr->nro_vertices] = novoNode;
+    gr->nro_vertices++;
+
+    return 1;
 }
 
 // Criar um novo grafo.
@@ -36,6 +51,7 @@ Grafo* criarGrafo(int nro_vertices) {
         gr->nro_vertices = nro_vertices;
         gr->nro_arestas = 0;
         gr->lista_adj = (Node **) malloc(nro_vertices * sizeof(Node *));
+        gr->lista_tam = nro_vertices;
 
         for (int i = 0; i < nro_vertices; i++) {
             gr->lista_adj[i] = NULL;
