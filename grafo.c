@@ -4,7 +4,8 @@
 
 struct node {
     Node* prox;
-    int label;
+    int label;  // Na verdade não é um label em si, é só um identificador numerico para ficar mais fácil de entender
+    // o que tá acontecendo no grafo.
     float peso;
 };
 
@@ -12,10 +13,75 @@ struct grafo {
     int nro_vertices;   // Número de vértices alocados.
     int lista_tam;        // Espaço total do vetor de listas.
     int nro_arestas;
-    int eh_ponderado;
     int grau_max;
     Node** lista_adj;       // Vetor de listas ligadas.
+    char* labels;
+    int* grau;
 };
+
+void carregarGrafo(Grafo* grafo, int ehDigrafo) {
+
+    char* myFile = "E://Rayane//projetos//grafos//retweet.mtx";
+        FILE *arquivo = fopen(myFile, "r");
+    if (arquivo == NULL) {
+        perror("Erro ao abrir o arquivo");
+        return;
+    }
+
+    int a, b;
+    char linha[256]; // Buffer para armazenar a linha lida
+
+    while (fgets(linha, sizeof(linha), arquivo)) {
+        if (sscanf(linha, "%d %d", &a, &b) == 2) {
+            insereAresta(grafo, a, b, 0);
+        } else {
+            printf("Erro ao processar a linha: %s", linha);
+        }
+    }
+
+    fclose(arquivo);
+}
+
+int obterGrauVertice(Grafo* gr, int vertice) {
+    if (gr == NULL || vertice < 0 || vertice >= gr->nro_vertices) {
+        return -1; // Retorna -1 se o grafo for inválido ou o vértice não existir
+    }
+    return gr->grau[vertice];
+}
+
+int grauMedio(Grafo *gr){
+    if(gr == NULL) {
+        return 0;
+    }
+    if(gr->nro_vertices == 0) {
+        return -1;
+    }
+
+    int i, j, soma = 0;
+    for(i=0; i < gr->nro_vertices; i++){
+        soma += gr->grau[i];
+    }
+    printf("Soma do grau de cada vertices: %d\nNumero de vértices: %d", soma, gr->nro_vertices);
+    return soma / gr->nro_vertices;
+}
+
+int grauMax(Grafo *gr, int *v){
+    if(gr == NULL) {
+        return 0;
+    }
+    if(gr->nro_vertices == 0) {
+        return -1;
+    }
+
+    int i, j, maior = 0;
+    for(i=0; i < gr->nro_vertices; i++){
+        if(maior < gr->grau[i]) {
+            maior = gr->grau[i];
+            *v = i;
+        }
+    }
+    return maior;
+}
 
 // Criar um novo nó(vértice) no grafo, realocar espaço para a lista de adjacência em 50% (caso necessário).
 int insereVertice(Grafo* gr, int label) {
@@ -52,8 +118,10 @@ Grafo* criarGrafo(int nro_vertices) {
         gr->nro_arestas = 0;
         gr->lista_adj = (Node **) malloc(nro_vertices * sizeof(Node *));
         gr->lista_tam = nro_vertices;
+        gr->labels = malloc((nro_vertices * sizeof(char)));
 
         for (int i = 0; i < nro_vertices; i++) {
+            gr->labels[i] = ' ';
             gr->lista_adj[i] = NULL;
         }
     }
