@@ -17,16 +17,16 @@ struct grafo {
     Node** lista_adj;       // Vetor de listas ligadas.
 };
 
-// Criar um novo nó(vértice) no grafo.
+// Criar um novo nó(vértice) no grafo, realocar espaço para a lista de adjacência em 50% (caso necessário).
 int insereVertice(Grafo* gr, int label) {
     int novoNroVertices = gr->nro_vertices + 1;
 
-    if(novoNroVertices > gr->lista_tam) {
+    if (novoNroVertices > gr->lista_tam) {
         int novoTamanho = gr->nro_vertices * 1.5;
         gr->lista_adj = realloc(gr->lista_adj, novoTamanho * sizeof(Node*));
     }
 
-    if(gr->lista_adj == NULL)
+    if (gr->lista_adj == NULL)
         return 0;
 
     Node* novoNode = malloc(sizeof(Node));
@@ -65,7 +65,7 @@ Grafo* criarGrafo(int nro_vertices) {
 int insereAresta(Grafo* gr, int u, int v, float w) {
     Node* aux;
 
-    if(gr == NULL)
+    if (gr == NULL)
         return 0;
 
     // Assegura que os vértices estão dentro do grafo.
@@ -79,7 +79,7 @@ int insereAresta(Grafo* gr, int u, int v, float w) {
         if (aux->label == v)
             return 0;
 
-// Adicionar um novo vértice ao início da lista de adjacência de U.
+    // Adicionar um novo vértice ao início da lista de adjacência de U.
    aux = malloc(sizeof(Node*));
    aux->label = v;
    aux->prox = gr->lista_adj[u];
@@ -87,13 +87,54 @@ int insereAresta(Grafo* gr, int u, int v, float w) {
    gr->lista_adj[u] = aux;
    gr->nro_arestas++;
 
-    // TODO: Tratar dígrafo
+    // TODO: Tratar grafo não direcionado.
+    return 1;
+}
+
+// Função auxiliar para grafos não direcionados.
+int removeArestaAux(Grafo* gr, int u, int v) {
+    Node* ant = NULL;                   // Vértice anterior à V.
+    Node* atual = gr->lista_adj[u];     // Vértice para o início da lista de adjacência de U.
+
+    while (atual && atual->label < v) {
+        ant = atual;
+        atual = atual->prox;
+    }
+
+    if (atual && atual->label == v) {
+        if (ant)
+            ant->prox = atual->prox; // Se já havia um anterior na lista ligada, este é atualizado com ovértice seguinte ao que foi deletado
+        else    // Se a lista de adjacência estava vazia.
+            gr->lista_adj[u] = atual->prox;
+        free(atual);
+        return 1;
+    }
+
+    printf("ERRO: A aresta nao existe.\n");
+    return 0;
+}
+
+// Remove a aresta (u, v) do grafo, caso exista.
+int removeAresta(Grafo* gr, int u, int v) {
+    // Assegurar que os vértices existem no grafo.
+    if (gr == NULL || u < 0 || u >= gr->nro_vertices)
+        return 0;
+    if (v < 0 || v >= gr->nro_vertices)
+        return  0;
+
+    // Remove a resta dos dois lados, para grafos não direcionados.
+    if (removeArestaAux(gr, u, v)) {
+        removeArestaAux(gr, v, u);
+        gr->nro_arestas--;
+    }
+
+    // TODO: Tratar grafo direcionado.
     return 1;
 }
 
 // Imprimir o grafo
 void imprimirGrafo(Grafo* grafo) {
-    for(int v = 0; v < grafo->nro_vertices; v++) {
+    for (int v = 0; v < grafo->nro_vertices; v++) {
         Node* temp = grafo->lista_adj[v];
         printf("\n Node %d:\n ", v);
         while (temp) {
