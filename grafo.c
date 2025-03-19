@@ -1,11 +1,11 @@
 #include <stdlib.h>
 #include <stdio.h>
+#include <string.h>
 #include <grafo.h>
 
 struct node {
     Node* prox;
-    int label;  // Na verdade não é um label em si, é só um identificador numerico para ficar mais fácil de entender
-    // o que tá acontecendo no grafo.
+    int label;  // Identificador numérico.
     float peso;
 };
 
@@ -13,14 +13,14 @@ struct grafo {
     int nro_vertices;   // Número de vértices alocados.
     int lista_tam;        // Espaço total do vetor de listas.
     int nro_arestas;
+    int eh_ponderado;
     int grau_max;
     Node** lista_adj;       // Vetor de listas ligadas.
-    char* labels;
+    char** labels;
     int* grau;
 };
 
 void carregarGrafo(Grafo* grafo, int ehDigrafo) {
-
     char* myFile = "E://Rayane//projetos//grafos//retweet.mtx";
         FILE *arquivo = fopen(myFile, "r");
     if (arquivo == NULL) {
@@ -84,7 +84,7 @@ int grauMax(Grafo *gr, int *v){
 }
 
 // Criar um novo nó(vértice) no grafo, realocar espaço para a lista de adjacência em 50% (caso necessário).
-int insereVertice(Grafo* gr, int label) {
+int insereVertice(Grafo* gr, char* label) {
     int novoNroVertices = gr->nro_vertices + 1;
 
     if (novoNroVertices > gr->lista_tam) {
@@ -99,10 +99,12 @@ int insereVertice(Grafo* gr, int label) {
 
     if (novoNode != NULL) {
         novoNode->prox = NULL;
-        novoNode->label = label;
+        novoNode->label = gr->nro_vertices;
         novoNode->peso = 0;
     }
 
+    gr->labels = realloc(gr->labels, novoNroVertices * sizeof(char*));
+    gr->labels[gr->nro_vertices] = label;
     gr->lista_adj[gr->nro_vertices] = novoNode;
     gr->nro_vertices++;
 
@@ -110,7 +112,7 @@ int insereVertice(Grafo* gr, int label) {
 }
 
 // Criar um novo grafo.
-Grafo* criarGrafo(int nro_vertices) {
+Grafo* criarGrafo(int nro_vertices, int eh_ponderado) {
     Grafo* gr = (Grafo*) malloc( sizeof(Grafo) );
 
     if (gr != NULL) {
@@ -118,10 +120,18 @@ Grafo* criarGrafo(int nro_vertices) {
         gr->nro_arestas = 0;
         gr->lista_adj = (Node **) malloc(nro_vertices * sizeof(Node *));
         gr->lista_tam = nro_vertices;
-        gr->labels = malloc((nro_vertices * sizeof(char)));
+        gr->labels = (char **) malloc((nro_vertices * sizeof(char*) ));
+        gr->eh_ponderado = eh_ponderado;
 
+        if (gr->labels == NULL) {
+            printf("Erro ao alocar memória para labels.\n");
+            return 0;
+        }
+
+        // Preenche o vetor de labels com strings vazias à princípio.
         for (int i = 0; i < nro_vertices; i++) {
-            gr->labels[i] = ' ';
+            gr->labels[i] = (char *) malloc(256);
+            sprintf(gr->labels[i], " ");
             gr->lista_adj[i] = NULL;
         }
     }
@@ -145,7 +155,7 @@ int insereAresta(Grafo* gr, int u, int v, float w) {
     // Percorre toda a lista de adjacência de U para saber se a aresta já existe.
     for (aux = gr->lista_adj[u]; aux != NULL; aux = aux->prox)
         if (aux->label == v)
-            return 0;
+            return 0;       // A aresta já existe.
 
     // Adicionar um novo vértice ao início da lista de adjacência de U.
    aux = malloc(sizeof(Node*));
@@ -201,12 +211,17 @@ int removeAresta(Grafo* gr, int u, int v) {
 }
 
 // Imprimir o grafo
-void imprimirGrafo(Grafo* grafo) {
-    for (int v = 0; v < grafo->nro_vertices; v++) {
-        Node* temp = grafo->lista_adj[v];
-        printf("\n Node %d:\n ", v);
+void imprimirGrafo(Grafo* gr) {
+    for (int v = 0; v < gr->nro_vertices; v++) {
+        Node* temp = gr->lista_adj[v];
+        printf("\nVertice %d", v);
+
+        // Formatar a impressão dos dados.
+        (strcmp(gr->labels[v], " ") != 0) ? printf(" (%s): \n", gr->labels[v]) : printf("\n");
+
         while (temp) {
-            printf("%d (%.2f) -> ", temp->label, temp->peso);
+            printf("%d ", temp->label);
+            (gr->eh_ponderado == 0) ?  printf("-> ") : printf("(%.2f) -> ", temp->peso);
             temp = temp->prox;
         }
         printf("\n");
