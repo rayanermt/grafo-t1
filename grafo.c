@@ -53,27 +53,50 @@ Grafo* criarGrafo(int nro_vertices, int eh_ponderado, int eh_direcionado) {
 }
 
 // Carregar informações de um arquivo em um grafo vazio.
-void carregarGrafo(Grafo* grafo, int ehDigrafo) {
-    char *myFile = "E://Rayane//projetos//grafos//retweet.mtx";
-    FILE *arquivo = fopen(myFile, "r");
-    if (arquivo == NULL) {
+void carregarGrafo(char *arquivo, Grafo* grafo, int ehDigrafo) {
+    FILE *arquivoAberto = fopen(arquivo, "r");
+    if (arquivoAberto == NULL) {
         perror("Erro ao abrir o arquivo");
         return;
     }
-
     int a, b;
-
     char linha[256]; // Buffer para armazenar a linha lida
 
-    while (fgets(linha, sizeof(linha), arquivo)) {
+    while (fgets(linha, sizeof(linha), arquivoAberto)) {
         if (sscanf(linha, "%d %d", &a, &b) == 2) {
-            insereAresta(grafo, a, b, 0);
-            insereAresta(grafo, b, a, 0);
+
+            insereAresta(grafo, a-1, b-1, 1);
         } else {
             printf("Erro ao processar a linha: %s", linha);
         }
     }
-    fclose(arquivo);
+    fclose(arquivoAberto);
+}
+
+void buscaProfundidade(Grafo *gr, int inicio, int *visitado, int numeroComponente) {
+    Node *p;
+    visitado[inicio] = numeroComponente;  // Marca o vértice com o identificador da componente
+    for (p = gr->lista_adj[inicio]; p != NULL; p = p->prox) {
+        if (visitado[p->label] == -1) {
+            buscaProfundidade(gr, p->label, visitado, numeroComponente);
+        }
+    }
+}
+
+int buscaComponentesConexa(Grafo *grafo) {
+    int numeroVertices = grafo->nro_vertices;
+    int i, componenteAtual = 1, j;
+    int vetorAux[numeroVertices];
+    for (i = 0; i < numeroVertices; i++) {
+        vetorAux[i] = -1;
+    }
+    for (i = 0; i < numeroVertices; i++) {
+        if (vetorAux[i] == -1) {
+            buscaProfundidade(grafo, i, vetorAux, componenteAtual);
+            componenteAtual++;
+        }
+    }  
+    return componenteAtual - 1;
 }
 
 // Criar um novo vértice no grafo, realocar espaço para a lista de adjacência em 50% (caso necessário).
@@ -142,6 +165,7 @@ int insereAresta(Grafo* gr, int u, int v, float w) {
     if (v < 0 || v >= gr->nro_vertices || v == u)
         return  0;
 
+    
     insereArestaAux(gr, u, v, w);
     if(gr->eh_direcionado == 0)
         insereArestaAux(gr, v, u, w);
@@ -211,8 +235,8 @@ int grauMedio(Grafo *gr){
     int i, j, soma = 0;
     for(i=0; i < gr->nro_vertices; i++){
         soma += gr->grau[i];
+        printf("Vertice %d %d\n", i, gr->grau[i]);
     }
-    printf("Soma do grau de cada vertices: %d\nNumero de vertices: %d\n", soma, gr->nro_vertices);
     return soma / gr->nro_vertices;
 }
 
@@ -238,7 +262,7 @@ int grauMax(Grafo *gr, int *v){
 void imprimirGrafo(Grafo* gr) {
     for (int v = 0; v < gr->nro_vertices; v++) {
         Node* temp = gr->lista_adj[v];
-        printf("\nVertice %d", v);
+        printf("\nVertice %d", v+1);
 
         // Formatar a impressão dos dados.
         (strcmp(gr->labels[v], " ") != 0) ? printf(" (%s): \n", gr->labels[v]) : printf("\n");
@@ -250,23 +274,6 @@ void imprimirGrafo(Grafo* gr) {
         }
         printf("\n");
     }
-}
-
-// Função auxiliar para procurar a menor distância
-int procuraMenorDistancia(float *dist, int *visitado, int NV) {
-    int i, menor = -1, primeiro = 1;
-    for (i = 0; i < NV; i++) {
-        if (dist[i] >= 0 && visitado[i] == 0) {
-            if (primeiro) {
-                menor = i;
-                primeiro = 0;
-            } else {
-                if (dist[menor] > dist[i])
-                    menor = i;
-            }
-        }
-    }
-    return menor;
 }
 
 int liberaGrafo(Grafo* gr) {
@@ -288,37 +295,50 @@ int liberaGrafo(Grafo* gr) {
     gr->lista_adj = NULL;
     return 1;
 }
-/*
+
+// Função auxiliar para procurar a menor distância
+int procuraMenorDistancia(float *dist, int *visitado, int NV) {
+    int i, menor = -1, primeiro = 1;
+    for (i = 0; i < NV; i++) {
+        if (dist[i] >= 0 && visitado[i] == 0) {
+            if (primeiro) {
+                menor = i;
+                primeiro = 0;
+            } else if (dist[menor] > dist[i]) {
+                menor = i;
+            }
+        }
+    }
+    return menor;
+}
+
 // Função para calcular os menores caminhos a partir de um vértice
 void menorCaminho_Grafo(Grafo *gr, int ini, int *ant, float *dist) {
-    int i, cont, NV, ind, *visitado, vert;
-    cont = NV = gr->nro_vertices;
-    visitado = (int *)malloc(NV * sizeof(int));
+    int i, NV = gr->nro_vertices, vert;
+    int *visitado = (int *)malloc(NV * sizeof(int));
     for (i = 0; i < NV; i++) {
         ant[i] = -1;
         dist[i] = -1;
         visitado[i] = 0;
     }
     dist[ini] = 0;
-    while (cont > 0) {
+
+    while (1) {
         vert = procuraMenorDistancia(dist, visitado, NV);
         if (vert == -1)
             break;
 
         visitado[vert] = 1;
-        cont--;
 
-        for (i = 0; i < gr->grau[vert]; i++) {
-            ind = gr->arestas[vert][i];
-            if (dist[ind] < 0) {
-                dist[ind] = dist[vert] + 1; // ou o peso da aresta
+        Node *adj = gr->lista_adj[vert];
+        while (adj != NULL) {
+            int ind = adj->label;
+            int peso = adj->peso > 0 ? adj->peso : 1;  // Peso default = 1
+            if (dist[ind] < 0 || dist[ind] > dist[vert] + peso) {
+                dist[ind] = dist[vert] + peso;
                 ant[ind] = vert;
-            } else {
-                if (dist[ind] > dist[vert] + 1) {
-                    dist[ind] = dist[vert] + 1; // ou o peso da aresta
-                    ant[ind] = vert;
-                }
             }
+            adj = adj->prox;
         }
     }
 
@@ -345,7 +365,5 @@ float menorCaminhoMedio(Grafo *gr) {
     free(ant);
     free(dist);
 
-    // Retorna a média dos menores caminhos
     return somaMenoresCaminhos / (NV * (NV - 1));
-    }
-    */
+}
