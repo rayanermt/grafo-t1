@@ -3,14 +3,15 @@
 #include <grafo.h>
 
 int main () {
-    // Testes Marcos
-    Grafo* meuGrafo = criarGrafo(96, 0); //arestas, grau_max,
-    carregarGrafo(meuGrafo, 0);
-    insereVertice(meuGrafo, "hello");
+    Grafo* tweetGrafo = criarGrafo(96, 0, 0);
+    carregarGrafo(tweetGrafo, 0);
 
-    imprimirGrafo(meuGrafo);
+    insereVertice(tweetGrafo, "novoTweet");
+    insereAresta(tweetGrafo, 96, 1, 0);
+    insereAresta(tweetGrafo, 96, 3, 0);
 
-    // TODO: Mudar a insere aresta pra colocar dos dois lados
-    //
+    imprimirGrafo(tweetGrafo);
+    int g = grauMedio(tweetGrafo);
+
     return 0;
 }
